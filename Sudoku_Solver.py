@@ -6,25 +6,8 @@ import keyboard
 
 #------------------------------------------
 
-grid = [[0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0]]
-
-defaultgrid = [[0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0]]
+grid = [[0 for _ in range(9)] for _ in range(9)]
+proceed_status = 0
 
 def windows_configuration():
         Sudoku.geometry("600x700")
@@ -56,6 +39,8 @@ def create_button ():
 def clicked_solve():
     global grid
     global defaultgrid
+    global proceed_status
+    proceed_status = 0
     for row in range(0,9):
         for column in range(0,9):
             field=("field{}{}".format(column, row))
@@ -66,7 +51,10 @@ def clicked_solve():
                 getnumber = 0
             if getnumber not in ['0','1','2','3','4','5','6','7','8','9',0,1,2,3,4,5,6,7,8,9]:
                 messagebox.showerror("ERROR", "Game SUDOKU use only numbers! \n try again")
+                delete_function()
             grid[column][row]=int(grid[column][row])
+        if proceed_status == 1:
+            break
 
     for row in range(0,9):
         for column in range(0,9):
@@ -74,9 +62,10 @@ def clicked_solve():
                 number = grid[row][column]
                 by_the_rule(row, column, number)
     
-    if grid != defaultgrid:
+    if grid != [[0 for _ in range(9)] for _ in range(9)]:
         solve()
-        messagebox.showinfo("info", "No more possible solution!")
+        if proceed_status == 0:
+            messagebox.showinfo("info", "No more possible solution!")
     else: 
         return False
 
@@ -86,10 +75,10 @@ def by_the_rule(row, column, number):
     count1=0
     count2=0
     count3=0
-    if grid == defaultgrid:
+    if grid == [[0 for _ in range(9)] for _ in range(9)]:
         messagebox.showerror("ERROR", "There is no numbers in fields, is NOT by the rules of game SUDOKU \n try again")
         update_field()
-        delete_function(by_the_rule())
+        delete_function()
         return False
 
     #Is the number appearing in the given row?
@@ -99,8 +88,9 @@ def by_the_rule(row, column, number):
             if count1 == 2:
                 messagebox.showerror("ERROR", "Numbers in fields is NOT by the rules of game SUDOKU \n try again")
                 update_field()
-                delete_function(by_the_rule())
-                return False
+                delete_function()
+        if proceed_status == 1:
+            break
 
     #Is the number appearing in the given column?
     for i in range(0,9):
@@ -109,8 +99,9 @@ def by_the_rule(row, column, number):
             if count2 == 2:
                 messagebox.showerror("ERROR", "Numbers in fields is NOT by the rules of game SUDOKU \n try again")
                 update_field()
-                delete_function(by_the_rule())
-                return False
+                delete_function()
+        if proceed_status == 1:
+            break
     
     #Is the number appearing in the given square?
     x0 = (column // 3) * 3
@@ -121,28 +112,33 @@ def by_the_rule(row, column, number):
                 count3 += 1
                 if count3 == 2:
                     messagebox.showerror("ERROR", "Numbers in fields is NOT by the rules of game SUDOKU \n try again")
-                    update_field()
-                    delete_function(by_the_rule())
-                    return False
+                    delete_function()
+            if proceed_status == 1:
+                break
+        if proceed_status == 1:
+            break
 
 def solve():
     global grid
+    global proceed_status
     for row in range(0,9):
         for column in range(0,9):
             if grid[row][column] == 0:
                 for number in range(1,10):
                     if possible(row, column, number):
                         grid[row][column] = int(number)
+                        if proceed_status == 1:
+                            break
                         solve()
                         grid[row][column] = 0
 
                 return
       
     update_field()
-    msg_box = messagebox.askquestion("info", "Maby there is more possible solutions \n Do you want proceed?", icon="warning")
-    if msg_box == "no":
-        print ("no more")
-        delete_function(solve())
+    if proceed_status == 0:
+        msg_box = messagebox.askquestion("info", "Maby there is more possible solutions \n Do you want proceed?", icon="warning")
+        if msg_box == "no":
+            delete_function()
         
 
 def possible(row, column, number):
@@ -177,6 +173,13 @@ def update_field():
                 grid[column][row] = ""
             globals()[field].insert(0, grid[column][row])
     return False
+
+def delete_function():
+    global grid
+    global proceed_status
+    grid = [[0 for _ in range(9)] for _ in range(9)]
+    update_field()
+    proceed_status = 1
 
 #------------------------------------------
 
