@@ -1,14 +1,145 @@
 import numpy as np
+from tkinter import *
+from tkinter import messagebox
+import keyboard
 
-grid = [[0,0,2,0,0,0,0,3,0],
-        [8,0,0,0,0,7,0,0,0],
-        [9,4,0,0,0,0,0,0,0],
-        [4,0,7,0,0,0,9,0,0],
-        [0,0,0,3,5,0,1,0,0],
-        [0,0,0,0,6,0,0,0,0],
-        [0,3,5,0,0,0,0,6,0],
-        [0,0,0,0,0,2,8,0,0],
-        [0,0,0,0,0,0,0,0,0]]
+
+#------------------------------------------
+
+grid = [[0 for _ in range(9)] for _ in range(9)]
+proceed_status = 0
+
+def windows_configuration():
+        Sudoku.geometry("600x700")
+        Sudoku.title("SUDOKU SOLVER")
+        Sudoku.resizable(False, False)
+        icon = PhotoImage(file="ico.png")
+        Sudoku.iconphoto(True, icon)
+        Sudoku.config(bg="white")
+
+def headline():
+    headline = Label(Sudoku, 
+                text="SUDOKU SOLVER", 
+                font=("Arial", 10), 
+                fg="BLACK",
+                bg="white")                     # Informacija na dnu stranice ko je napravio igricu
+    return headline
+
+def create_button ():
+        s_b = Button(Sudoku, 
+                text= "solve", 
+                font=("Arial", 15), 
+                fg="black",  
+                relief="groove", 
+                bd=5,  
+                compound="center",
+                command= clicked_solve)
+        return (s_b) 
+
+def clicked_solve():
+    global grid
+    global defaultgrid
+    global proceed_status
+    proceed_status = 0
+    for row in range(0,9):
+        for column in range(0,9):
+            field=("field{}{}".format(column, row))
+            getnumber=globals()[field].get()
+            grid[column][row]=getnumber
+            if grid[column][row] == "":
+                grid[column][row] = 0
+                getnumber = 0
+            if getnumber not in ['0','1','2','3','4','5','6','7','8','9',0,1,2,3,4,5,6,7,8,9]:
+                messagebox.showerror("ERROR", "Game SUDOKU use only numbers! \n try again")
+                delete_function()
+            grid[column][row]=int(grid[column][row])
+        if proceed_status == 1:
+            break
+
+    for row in range(0,9):
+        for column in range(0,9):
+            if grid[row][column] != 0:
+                number = grid[row][column]
+                by_the_rule(row, column, number)
+    
+    if grid != [[0 for _ in range(9)] for _ in range(9)]:
+        solve()
+        if proceed_status == 0:
+            messagebox.showinfo("info", "No more possible solution!")
+    else: 
+        return False
+
+def by_the_rule(row, column, number):
+    global grid
+    global defaultgrid
+    count1=0
+    count2=0
+    count3=0
+    if grid == [[0 for _ in range(9)] for _ in range(9)]:
+        messagebox.showerror("ERROR", "There is no numbers in fields, is NOT by the rules of game SUDOKU \n try again")
+        update_field()
+        delete_function()
+        return False
+
+    #Is the number appearing in the given row?
+    for i in range(0,9):
+        if grid[row][i] == number:
+            count1 += 1
+            if count1 == 2:
+                messagebox.showerror("ERROR", "Numbers in fields is NOT by the rules of game SUDOKU \n try again")
+                update_field()
+                delete_function()
+        if proceed_status == 1:
+            break
+
+    #Is the number appearing in the given column?
+    for i in range(0,9):
+        if grid[i][column] == number:
+            count2 += 1
+            if count2 == 2:
+                messagebox.showerror("ERROR", "Numbers in fields is NOT by the rules of game SUDOKU \n try again")
+                update_field()
+                delete_function()
+        if proceed_status == 1:
+            break
+    
+    #Is the number appearing in the given square?
+    x0 = (column // 3) * 3
+    y0 = (row // 3) * 3
+    for i in range(0,3):
+        for j in range(0,3):
+            if grid[y0+i][x0+j] == number:
+                count3 += 1
+                if count3 == 2:
+                    messagebox.showerror("ERROR", "Numbers in fields is NOT by the rules of game SUDOKU \n try again")
+                    delete_function()
+            if proceed_status == 1:
+                break
+        if proceed_status == 1:
+            break
+
+def solve():
+    global grid
+    global proceed_status
+    for row in range(0,9):
+        for column in range(0,9):
+            if grid[row][column] == 0:
+                for number in range(1,10):
+                    if possible(row, column, number):
+                        grid[row][column] = int(number)
+                        if proceed_status == 1:
+                            break
+                        solve()
+                        grid[row][column] = 0
+
+                return
+      
+    update_field()
+    if proceed_status == 0:
+        msg_box = messagebox.askquestion("info", "Maby there is more possible solutions \n Do you want proceed?", icon="warning")
+        if msg_box == "no":
+            delete_function()
+        
 
 def possible(row, column, number):
     global grid
@@ -32,21 +163,53 @@ def possible(row, column, number):
 
     return True
 
-def solve():
+def update_field():
     global grid
     for row in range(0,9):
         for column in range(0,9):
-            if grid[row][column] == 0:
-                for number in range(1,10):
-                    if possible(row, column, number):
-                        grid[row][column] = number
-                        solve()
-                        grid[row][column] = 0
+            field=("field{}{}".format(column, row))
+            globals()[field].delete(0, END)
+            if grid[column][row] == 0:
+                grid[column][row] = ""
+            globals()[field].insert(0, grid[column][row])
+    return False
 
-                return
-      
-    print(np.matrix(grid))
-    input('More possible solutions')
+def delete_function():
+    global grid
+    global proceed_status
+    grid = [[0 for _ in range(9)] for _ in range(9)]
+    update_field()
+    proceed_status = 1
 
-solve()
-print("No more possible solution!")
+#------------------------------------------
+
+Sudoku = Tk()
+
+canvas = Canvas(Sudoku, width=600, height=600, bg="gray")
+
+slika = PhotoImage(file='sudoku_table.png')
+sudoku_table = canvas.create_image(0,0,image=slika,anchor=NW)
+
+windows_configuration()
+
+#------------------------------------------
+
+headline().pack(side="top", pady=10)
+canvas.pack()
+create_button().pack(side="bottom", pady=10)
+
+for row in range(0,9):
+    for column in range(0,9):
+        number = int(grid[column][row])
+        if number < 1 or number > 9:
+            number = ""
+        field=("field{}{}".format(column, row))
+        globals()[field] = Entry(canvas, font=("Arial", 30), justify = CENTER, borderwidth=0, relief="flat")
+        globals()[field] .insert(0, number)
+        x= 66 * row + 35
+        y= 66 * column + 35
+        canvas.create_window(x, y, height=50, width=25, window = globals()[field] )
+
+Sudoku.mainloop()
+
+#------------------------------------------
